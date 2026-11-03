@@ -1,0 +1,4 @@
+opencv-python
+numpy
+# Install a Python-version-compatible Dlib package separately if needed.
+# dlib-bin may be available for some Windows/Python combinations.
