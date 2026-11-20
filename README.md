@@ -31,7 +31,7 @@ Run the live pipeline using the default camera and landmark predictor:
 ```powershell
 python main.py --camera 0 --model models/shape_predictor_68_face_landmarks.dat
 ```
-Press `q` or `Esc` to quit.
+Press `q` or `Esc` to quit the application.
 
 Configurable CLI arguments:
 - `--camera`: Camera index (default: `0`)
