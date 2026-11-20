@@ -72,3 +72,88 @@ def estimate_head_pose(image_2d_points, camera_matrix, dist_coeffs=None):
 
     pitch_deg, yaw_deg, roll_deg = decompose_rotation_vector(rotation_vec)
     return pitch_deg, yaw_deg, roll_deg, rotation_vec, translation_vec
+
+
+class HeadPoseTracker:
+    def __init__(self, pitch_threshold=15.0, yaw_threshold=20.0,
+                 nodding_consecutive_frames=15, distraction_consecutive_frames=20):
+        self.pitch_threshold = float(pitch_threshold)
+        self.yaw_threshold = float(yaw_threshold)
+        self.nodding_consecutive_frames = int(nodding_consecutive_frames)
+        self.distraction_consecutive_frames = int(distraction_consecutive_frames)
+
+        self.nodding_frame_count = 0
+        self.distraction_frame_count = 0
+
+    def reset(self):
+        self.nodding_frame_count = 0
+        self.distraction_frame_count = 0
+
+    def update(self, pitch_deg, yaw_deg, roll_deg, rotation_vec, translation_vec,
+               camera_matrix, dist_coeffs):
+        if abs(pitch_deg) >= self.pitch_threshold:
+            self.nodding_frame_count += 1
+        else:
+            self.nodding_frame_count = 0
+
+        if abs(yaw_deg) >= self.yaw_threshold:
+            self.distraction_frame_count += 1
+        else:
+            self.distraction_frame_count = 0
+
+        is_nodding = self.nodding_frame_count >= self.nodding_consecutive_frames
+        is_distracted = self.distraction_frame_count >= self.distraction_consecutive_frames
+
+        return {
+            "pitch_deg": pitch_deg,
+            "yaw_deg": yaw_deg,
+            "roll_deg": roll_deg,
+            "is_nodding": is_nodding,
+            "is_distracted": is_distracted,
+            "nodding_frame_count": self.nodding_frame_count,
+            "distraction_frame_count": self.distraction_frame_count,
+            "rotation_vec": rotation_vec,
+            "translation_vec": translation_vec,
+            "camera_matrix": camera_matrix,
+            "dist_coeffs": dist_coeffs,
+        }
+
+    def handle_missing_face(self):
+        self.nodding_frame_count = 0
+        self.distraction_frame_count = 0
+        return {
+            "pitch_deg": None,
+            "yaw_deg": None,
+            "roll_deg": None,
+            "is_nodding": False,
+            "is_distracted": False,
+            "nodding_frame_count": 0,
+            "distraction_frame_count": 0,
+            "rotation_vec": None,
+            "translation_vec": None,
+            "camera_matrix": None,
+            "dist_coeffs": None,
+        }
+
+    def process_landmarks(self, landmarks, frame_width, frame_height):
+        if landmarks is None:
+            return self.handle_missing_face()
+
+        image_2d_points = extract_image_points(landmarks)
+        camera_matrix = get_camera_matrix(frame_width, frame_height)
+        dist_coeffs = get_distortion_coefficients()
+
+        pose_result = estimate_head_pose(image_2d_points, camera_matrix, dist_coeffs)
+        if pose_result is None:
+            return self.handle_missing_face()
+
+        pitch_deg, yaw_deg, roll_deg, rotation_vec, translation_vec = pose_result
+        return self.update(
+            pitch_deg=pitch_deg,
+            yaw_deg=yaw_deg,
+            roll_deg=roll_deg,
+            rotation_vec=rotation_vec,
+            translation_vec=translation_vec,
+            camera_matrix=camera_matrix,
+            dist_coeffs=dist_coeffs
+        )
