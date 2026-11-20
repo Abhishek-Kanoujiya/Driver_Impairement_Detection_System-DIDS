@@ -61,7 +61,16 @@ dist_coeffs = get_distortion_coefficients()
 pitch_deg, yaw_deg, roll_deg, rvec, tvec = estimate_head_pose(image_2d_points, camera_matrix, dist_coeffs)
 pose_result = head_pose_tracker.update(pitch_deg, yaw_deg, roll_deg, rvec, tvec, camera_matrix, dist_coeffs)
 ```
+## Phase 4A: EAR and MAR Based Drowsiness Detection
 
+Phase 4A uses facial landmark measurements to monitor signs of driver fatigue:
+
+- **Eye Aspect Ratio (EAR):** Measures the degree of eye openness using six eye landmark points. A lower EAR value indicates reduced eye openness.
+- **Mouth Aspect Ratio (MAR):** Measures mouth opening using facial landmarks. A higher MAR value can indicate yawning.
+- **Duration-Based Analysis:** Eye closure and mouth opening are monitored over time to distinguish prolonged events from brief, normal movements such as blinking.
+- **Fatigue Indicators:** Sustained eye closure and prolonged yawning are used as indicators for detecting possible driver drowsiness.
+
+The default EAR and MAR thresholds, along with their respective duration settings, are configurable in the detection pipeline.
 ## Default Thresholds
 - **EAR Threshold:** `0.23` (closure duration: `1.0` s)
 - **MAR Threshold:** `0.65` (yawn duration: `1.2` s)
